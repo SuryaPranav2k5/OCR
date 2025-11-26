@@ -1,0 +1,3 @@
+Q1: Photosynthesis is the process by which plants convert light energy into chemical energy.
+Q2: Machine learning is a branch of artificial intelligence that focuses on algorithms that can learn from data.
+Q3: Python is a high-level programming language known for its simplicity and readability.
