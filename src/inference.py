@@ -1,199 +1,307 @@
+import easyocr
 import cv2
-import pickle
 import numpy as np
 import os
-from tensorflow import keras
-import tensorflow as tf
+from PIL import Image
 
-class HandwritingRecognizer:
-    """Load and use trained model for inference"""
+# TrOCR imports
+from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+import torch
+
+
+class EasyOCRRecognizer:
+    """Handwriting recognition using EasyOCR"""
     
-    def __init__(self, model_dir):
-        # Load configuration
-        with open(f'{model_dir}/config.pkl', 'rb') as f:
-            self.config = pickle.load(f)
-        
-        # Load model - try .keras first, then fallback to .h5
-        model_path = f'{model_dir}/final_model.keras'
-        if not os.path.exists(model_path):
-            model_path = f'{model_dir}/final_model.h5'
-        
-        # Load model with safe_mode=False to handle Lambda layers
-        self.model = keras.models.load_model(
-            model_path,
-            safe_mode=False,
-            compile=False
-        )
-        
-        self.vocab = self.config['vocab']
-        self.num_to_char = self.config['num_to_char']
-        self.char_to_num = self.config['char_to_num']  # Also load char_to_num for verification
-        self.img_width = self.config['img_width']
-        self.img_height = self.config['img_height']
-        
-        # Debug: Print some info about the loaded model and config
-        print(f"Model input shape: {self.model.input_shape}")
-        print(f"Model output shape: {self.model.output_shape}")
-        print(f"Vocabulary size: {len(self.vocab)}")
-        print(f"Num to char mapping size: {len(self.num_to_char)}")
-        # Print first few mappings for verification
-        print(f"First 10 num_to_char mappings: {dict(list(self.num_to_char.items())[:10])}")
-        # Print some specific mappings that might be relevant
-        if 58 in self.num_to_char:
-            print(f"Index 58 maps to: '{self.num_to_char[58]}'")
-    
-    def preprocess_image(self, img_path):
-        """Preprocess image for prediction"""
-        # Debug: Print image path
-        print(f"Preprocessing image: {img_path}")
-        
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        
-        # Debug: Check if image was loaded successfully
-        if img is None:
-            print(f"Warning: Could not load image {img_path}")
-            return None
-            
-        print(f"Original image shape: {img.shape}")
-        
-        img = cv2.resize(img, (self.img_width, self.img_height))
-        print(f"Resized image shape: {img.shape}")
-        
-        img = np.expand_dims(img, axis=-1)
-        img = img / 255.0
-        img = np.expand_dims(img, axis=0)
-        print(f"Final preprocessed image shape: {img.shape}")
-        
-        return img
-    
-    def decode_prediction(self, pred):
-        """Decode model output using CTC decoder"""
-        print(f"Prediction shape: {pred.shape}")
-        
-        # Analyze prediction probabilities
-        batch_size, time_steps, num_classes = pred.shape
-        print(f"Analyzing prediction probabilities:")
-        
-        # Show probabilities for first few time steps
-        for t in range(min(5, time_steps)):  # Show 5 time steps instead of 3
-            time_step_probs = pred[0, t, :]
-            top_5_indices = np.argsort(time_step_probs)[-5:][::-1]  # Top 5 indices
-            print(f"  Time step {t}: Top 5 classes - ", end="")
-            for idx in top_5_indices:
-                prob = time_step_probs[idx]
-                char = self.num_to_char.get(idx, f"UNK({idx})")
-                print(f"[{idx}:'{char}'={prob:.6f}] ", end="")
-            print()
-        
-        # Try different CTC decoding approaches
-        input_len = np.ones(pred.shape[0]) * pred.shape[1]
-        
-        # Method 1: Greedy decoding (original)
+    def __init__(self):
+        print("Initializing EasyOCR...")
         try:
-            results = keras.backend.ctc_decode(
-                pred, 
-                input_length=input_len, 
-                greedy=True
-            )[0][0]
+            self.reader = easyocr.Reader(['en'], gpu=torch.cuda.is_available())
+            print("EasyOCR initialized successfully")
         except Exception as e:
-            print(f"Greedy decoding failed: {e}")
-            # Fallback: Manual greedy decoding
-            return self._manual_greedy_decode(pred)
-        
-        # Convert to text
-        output_text = []
-        for i, res in enumerate(results):
-            res = res.numpy()
-            print(f"Decoded indices for result {i}: {res}")
-            
-            # Convert indices to characters, handling the mapping correctly
-            text_chars = []
-            prev_idx = None
-            for idx in res:
-                int_idx = int(idx)
-                # Skip blank tokens (0) and duplicates for CTC
-                if int_idx != 0 and int_idx != prev_idx:
-                    if int_idx in self.num_to_char:
-                        char = self.num_to_char[int_idx]
-                        print(f"  Index {int_idx} -> Char '{char}'")
-                        # Only add non-empty characters (not just whitespace)
-                        if char and char.strip():  # Check if character is not just whitespace
-                            text_chars.append(char)
-                    else:
-                        print(f"  Index {int_idx} not in num_to_char mapping")
-                    prev_idx = int_idx
-                elif int_idx == 0:
-                    print(f"  Skipping blank token (index 0)")
-                    prev_idx = None  # Reset previous index for blank
-                else:
-                    print(f"  Skipping duplicate index {int_idx}")
-            
-            text = ''.join(text_chars)
-            print(f"  Final text for result {i}: '{text}'")
-            output_text.append(text)
-        
-        result = output_text[0] if output_text else ""
-        print(f"Final decoded text: '{result}'")
-        return result
-    
-    def _manual_greedy_decode(self, pred):
-        """Manual greedy decoding as fallback"""
-        print("Using manual greedy decoding")
-        batch_size, time_steps, num_classes = pred.shape
-        decoded_texts = []
-        
-        for b in range(batch_size):
-            # Get the class with maximum probability for each time step
-            max_indices = np.argmax(pred[b], axis=1)
-            print(f"Manual decoding - Max indices: {max_indices}")
-            
-            # Show what the max probabilities are
-            max_probs = np.max(pred[b], axis=1)
-            print(f"Max probabilities: {max_probs[:10]}...")  # First 10 values
-            
-            # Apply CTC collapsing rules
-            text_chars = []
-            prev_idx = None
-            for i, idx in enumerate(max_indices):
-                prob = pred[b, i, idx]
-                print(f"  Time {i}: idx={idx}, prob={prob:.6f}")
-                # Skip blank tokens (0) and duplicates
-                if idx != 0 and idx != prev_idx:
-                    if idx in self.num_to_char:
-                        char = self.num_to_char[idx]
-                        # Only add non-empty characters (not just whitespace)
-                        if char and char.strip():
-                            text_chars.append(char)
-                            print(f"    Added char '{char}'")
-                    prev_idx = idx
-                elif idx == 0:
-                    print(f"    Skipping blank token")
-                    prev_idx = None  # Reset for blank
-                else:
-                    print(f"    Skipping duplicate")
-            
-            text = ''.join(text_chars)
-            decoded_texts.append(text)
-            print(f"Manual decoded text: '{text}'")
-        
-        return decoded_texts[0] if decoded_texts else ""
+            print(f"EasyOCR initialization error: {e}")
+            self.reader = easyocr.Reader(['en'], gpu=False)
+        self.name = "EasyOCR"
     
     def predict(self, img_path):
-        """Predict text from image"""
-        print(f"\n--- Processing image: {img_path} ---")
+        """Predict text from image using EasyOCR"""
+        print(f"\n[EasyOCR] Processing: {img_path}")
         
-        img = self.preprocess_image(img_path)
-        if img is None:
-            return "Error: Could not load image"
+        if not os.path.exists(img_path):
+            return "Error: Image file not found"
+        
+        try:
+            # Read and preprocess
+            img = cv2.imread(img_path)
+            if img is None:
+                return "Error: Could not load image"
             
-        pred = self.model.predict(img, verbose=0)
-        text = self.decode_prediction(pred)
-        return text
+            # Convert to grayscale and enhance
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            enhanced = clahe.apply(gray)
+            
+            # Run OCR
+            results = self.reader.readtext(
+                enhanced,
+                detail=1,
+                paragraph=True,
+                text_threshold=0.6,
+                low_text=0.3,
+            )
+            
+            # Extract text
+            texts = [r[1] for r in results if len(r) >= 2]
+            full_text = ' '.join(texts)
+            
+            print(f"[EasyOCR] Result: '{full_text}'")
+            return full_text if full_text.strip() else "(No text detected)"
+            
+        except Exception as e:
+            print(f"[EasyOCR] Error: {e}")
+            return f"Error: {str(e)}"
 
-# Usage
-if __name__ == "__main__":
-    recognizer = HandwritingRecognizer('Models/trained_model')
+
+class TrOCRRecognizer:
+    """
+    Handwriting recognition using Microsoft TrOCR (Transformer-based)
+    Includes line segmentation for multi-line documents
+    """
     
-    # Test on an image
-    result = recognizer.predict('test_image.png')
-    print(f"Predicted text: {result}")
+    def __init__(self):
+        print("Initializing TrOCR (this may take a moment on first run)...")
+        try:
+            # Use TrOCR handwritten model - specifically trained for handwriting
+            model_name = "microsoft/trocr-base-handwritten"
+            
+            self.processor = TrOCRProcessor.from_pretrained(model_name)
+            self.model = VisionEncoderDecoderModel.from_pretrained(model_name)
+            
+            # Move to GPU if available
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            self.model.to(self.device)
+            
+            print(f"TrOCR initialized successfully (device: {self.device})")
+        except Exception as e:
+            print(f"TrOCR initialization error: {e}")
+            self.processor = None
+            self.model = None
+        
+        self.name = "TrOCR"
+    
+    def segment_lines(self, img):
+        """
+        Segment image into individual text lines using horizontal projection
+        """
+        # Convert to grayscale if needed
+        if len(img.shape) == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = img.copy()
+        
+        # Binarize
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        
+        # Calculate horizontal projection (sum of black pixels per row)
+        h_proj = np.sum(binary, axis=1)
+        
+        # Find line boundaries using projection profile
+        threshold = np.max(h_proj) * 0.1  # 10% of max as threshold
+        in_line = False
+        line_boundaries = []
+        start = 0
+        
+        for i, val in enumerate(h_proj):
+            if not in_line and val > threshold:
+                in_line = True
+                start = i
+            elif in_line and val <= threshold:
+                in_line = False
+                # Add some padding
+                pad = 5
+                line_boundaries.append((max(0, start - pad), min(len(h_proj), i + pad)))
+        
+        # Handle case where line extends to end of image
+        if in_line:
+            line_boundaries.append((start, len(h_proj)))
+        
+        # Merge very close lines (likely same line with gap)
+        merged_boundaries = []
+        for start, end in line_boundaries:
+            if merged_boundaries and start - merged_boundaries[-1][1] < 10:
+                merged_boundaries[-1] = (merged_boundaries[-1][0], end)
+            else:
+                merged_boundaries.append((start, end))
+        
+        # Extract line images
+        line_images = []
+        for start, end in merged_boundaries:
+            if end - start > 10:  # Minimum line height
+                line_img = img[start:end, :]
+                line_images.append(line_img)
+        
+        print(f"[TrOCR] Segmented into {len(line_images)} lines")
+        return line_images
+    
+    def predict_single_line(self, line_img):
+        """Predict text from a single line image"""
+        try:
+            # Convert numpy array to PIL Image
+            if isinstance(line_img, np.ndarray):
+                if len(line_img.shape) == 2:  # Grayscale
+                    line_img = cv2.cvtColor(line_img, cv2.COLOR_GRAY2RGB)
+                elif line_img.shape[2] == 4:  # RGBA
+                    line_img = cv2.cvtColor(line_img, cv2.COLOR_RGBA2RGB)
+                elif line_img.shape[2] == 3:  # BGR
+                    line_img = cv2.cvtColor(line_img, cv2.COLOR_BGR2RGB)
+                pil_img = Image.fromarray(line_img)
+            else:
+                pil_img = line_img
+            
+            # Process image
+            pixel_values = self.processor(pil_img, return_tensors="pt").pixel_values
+            pixel_values = pixel_values.to(self.device)
+            
+            # Generate text with conservative parameters to reduce hallucination
+            with torch.no_grad():
+                generated_ids = self.model.generate(
+                    pixel_values,
+                    max_length=64,              # Shorter max length
+                    num_beams=5,                # Beam search for better quality
+                    no_repeat_ngram_size=3,     # Prevent repetition
+                    length_penalty=1.0,         # Neutral length preference
+                    early_stopping=True,        # Stop when all beams finish
+                )
+            
+            # Decode
+            text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+            return text.strip()
+            
+        except Exception as e:
+            print(f"[TrOCR] Line prediction error: {e}")
+            return ""
+    
+    def predict(self, img_path):
+        """Predict text from image using TrOCR with line segmentation"""
+        print(f"\n[TrOCR] Processing: {img_path}")
+        
+        if self.processor is None or self.model is None:
+            return "Error: TrOCR not initialized"
+        
+        if not os.path.exists(img_path):
+            return "Error: Image file not found"
+        
+        try:
+            # Load image with OpenCV for line segmentation
+            img = cv2.imread(img_path)
+            if img is None:
+                return "Error: Could not load image"
+            
+            # Segment into lines
+            line_images = self.segment_lines(img)
+            
+            if not line_images:
+                # Fallback: try processing the whole image as one line
+                print("[TrOCR] No lines detected, processing as single image")
+                pil_img = Image.open(img_path).convert("RGB")
+                pixel_values = self.processor(pil_img, return_tensors="pt").pixel_values
+                pixel_values = pixel_values.to(self.device)
+                with torch.no_grad():
+                    generated_ids = self.model.generate(pixel_values, max_length=128)
+                text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+                return text if text.strip() else "(No text detected)"
+            
+            # Process each line
+            all_texts = []
+            for i, line_img in enumerate(line_images):
+                line_text = self.predict_single_line(line_img)
+                if line_text:
+                    all_texts.append(line_text)
+                    print(f"[TrOCR] Line {i+1}: '{line_text}'")
+            
+            # Join all lines
+            full_text = ' '.join(all_texts)
+            
+            print(f"[TrOCR] Full result: '{full_text}'")
+            return full_text if full_text.strip() else "(No text detected)"
+            
+        except Exception as e:
+            print(f"[TrOCR] Error: {e}")
+            import traceback
+            traceback.print_exc()
+            return f"Error: {str(e)}"
+
+
+class HandwritingRecognizer:
+    """
+    Combined handwriting recognizer using both EasyOCR and TrOCR
+    Returns results from both models for comparison
+    """
+    
+    def __init__(self, model_dir=None):
+        print("="*60)
+        print("Initializing Dual Handwriting Recognizer")
+        print("="*60)
+        
+        # Initialize both recognizers
+        self.easyocr = EasyOCRRecognizer()
+        self.trocr = TrOCRRecognizer()
+        
+        print("="*60)
+        print("Dual Recognizer Ready!")
+        print("="*60)
+    
+    def predict(self, img_path):
+        """
+        Returns prediction from primary recognizer (EasyOCR for backward compatibility)
+        Use predict_both() to get results from both models
+        """
+        return self.easyocr.predict(img_path)
+    
+    def predict_both(self, img_path):
+        """
+        Get predictions from both EasyOCR and TrOCR
+        
+        Returns:
+            dict with 'easyocr' and 'trocr' results
+        """
+        print(f"\n{'='*60}")
+        print(f"Processing with BOTH models: {img_path}")
+        print('='*60)
+        
+        easyocr_result = self.easyocr.predict(img_path)
+        trocr_result = self.trocr.predict(img_path)
+        
+        print(f"\n{'='*60}")
+        print("COMPARISON:")
+        print(f"  EasyOCR: {easyocr_result}")
+        print(f"  TrOCR:   {trocr_result}")
+        print('='*60)
+        
+        return {
+            'easyocr': easyocr_result,
+            'trocr': trocr_result
+        }
+
+
+# Usage example
+if __name__ == "__main__":
+    recognizer = HandwritingRecognizer()
+    
+    # Test on a sample image if available
+    test_images = [
+        'Datasets/IAM/image/c04-110-01.jpg',
+        'test_image.png',
+    ]
+    
+    for test_img in test_images:
+        if os.path.exists(test_img):
+            print(f"\n{'='*60}")
+            print(f"Testing on: {test_img}")
+            print('='*60)
+            results = recognizer.predict_both(test_img)
+            print(f"\nFinal Results:")
+            print(f"  EasyOCR: {results['easyocr']}")
+            print(f"  TrOCR:   {results['trocr']}")
+            break
+    else:
+        print("No test images found.")

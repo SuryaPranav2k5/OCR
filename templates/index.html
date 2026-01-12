@@ -1,238 +1,747 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Handwriting Recognition</title>
+    <title>Handwriting Assignment Grader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
             padding: 20px;
-            background-color: #f5f5f5;
         }
+
         .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 1100px;
+            margin: 0 auto;
         }
-        h1 {
+
+        .header {
             text-align: center;
-            color: #333;
+            padding: 40px 0;
         }
-        .upload-area {
-            border: 2px dashed #ccc;
-            border-radius: 10px;
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #8892b0;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title .icon {
+            font-size: 1.5rem;
+        }
+
+        .upload-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             padding: 40px;
             text-align: center;
-            margin: 20px 0;
-            transition: border-color 0.3s;
-        }
-        .upload-area:hover {
-            border-color: #999;
-        }
-        .upload-area.dragover {
-            border-color: #4CAF50;
-            background-color: #f9f9f9;
-        }
-        .file-input {
-            margin: 20px 0;
-        }
-        .btn {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
+            transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
         }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: #00d9ff;
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        .upload-zone p {
+            color: #8892b0;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
         .btn:hover {
-            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.3);
         }
+
         .btn:disabled {
-            background-color: #cccccc;
+            opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
-        .result {
-            margin-top: 20px;
-            padding: 20px;
-            border-radius: 5px;
-            display: none;
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
         }
-        .success {
-            background-color: #dff0d8;
-            border: 1px solid #d6e9c6;
-            color: #3c763d;
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: none;
         }
-        .error {
-            background-color: #f2dede;
-            border: 1px solid #ebccd1;
-            color: #a94442;
-        }
-        .preview {
+
+        .image-preview {
             max-width: 100%;
-            max-height: 300px;
-            margin: 20px 0;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 15px;
             display: none;
         }
-        .loading {
-            display: none;
+
+        /* OCR Results Grid */
+        .ocr-results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .ocr-result-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ocr-result-box.easyocr {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .ocr-result-box.trocr {
+            border-left: 4px solid #00d9ff;
+        }
+
+        .ocr-result-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .ocr-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .ocr-badge.easyocr {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .ocr-badge.trocr {
+            background: rgba(0, 217, 255, 0.2);
+            color: #00d9ff;
+        }
+
+        .ocr-result-text {
+            color: #e2e8f0;
+            line-height: 1.6;
+            min-height: 60px;
+            font-size: 0.95rem;
+        }
+
+        .ocr-result-text.placeholder {
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .select-btn {
+            margin-top: 12px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            width: 100%;
+        }
+
+        .select-btn.selected {
+            background: linear-gradient(90deg, #00ff88, #00d9ff);
+        }
+
+        .textarea-container {
+            margin-top: 20px;
+        }
+
+        .textarea-container label {
+            display: block;
+            margin-bottom: 8px;
+            color: #8892b0;
+            font-weight: 500;
+        }
+
+        .textarea-container textarea {
+            width: 100%;
+            min-height: 120px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            resize: vertical;
+        }
+
+        .textarea-container textarea:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+
+        .selected-text-display {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .selected-text-display label {
+            color: #00ff88;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .selected-text-display .text {
+            color: #fff;
+        }
+
+        .grade-btn-container {
             text-align: center;
-            margin: 20px 0;
+            margin: 30px 0;
         }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
+
+        .grade-btn {
+            font-size: 1.2rem;
+            padding: 16px 48px;
+        }
+
+        /* Results Section */
+        .results-card {
+            display: none;
+        }
+
+        .results-card.show {
+            display: block;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .score-display {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 2s linear infinite;
-            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
         }
+
+        .score-circle.excellent {
+            background: linear-gradient(135deg, #00ff88, #00d9ff);
+        }
+
+        .score-circle.good {
+            background: linear-gradient(135deg, #00d9ff, #7c3aed);
+        }
+
+        .score-circle.average {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        }
+
+        .score-circle.poor {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .score-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        .score-label {
+            font-size: 0.9rem;
+            color: #1a1a2e;
+            font-weight: 500;
+        }
+
+        .score-grade {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .detail-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .detail-item label {
+            color: #8892b0;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .detail-item span {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #00d9ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            color: #8892b0;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .ocr-results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>📝 Handwriting Recognition</h1>
-        <p style="text-align: center; color: #666;">Upload an image of handwritten text to convert it to digital text</p>
-        
-        <div class="upload-area" id="uploadArea">
-            <p>Drag & drop your image here or click to browse</p>
-            <input type="file" id="fileInput" class="file-input" accept="image/*" style="display: none;">
-            <button class="btn" id="browseBtn">Browse Files</button>
+        <header class="header">
+            <h1>📝 Assignment Grader</h1>
+            <p>Dual OCR: EasyOCR + TrOCR (Microsoft Transformer)</p>
+        </header>
+
+        <!-- Upload Section -->
+        <div class="card">
+            <h2 class="card-title"><span class="icon">📷</span> Student's Answer</h2>
+            <div class="upload-zone" id="uploadZone">
+                <p>Drag & drop handwritten answer image or click to browse</p>
+                <input type="file" id="fileInput" class="file-input" accept="image/*">
+                <button class="btn btn-secondary" id="browseBtn">Choose File</button>
+            </div>
+            <img id="imagePreview" class="image-preview" alt="Preview">
+
+            <!-- OCR Results Side by Side -->
+            <div class="ocr-results-grid" id="ocrResultsGrid" style="display: none;">
+                <div class="ocr-result-box easyocr">
+                    <div class="ocr-result-header">
+                        <span class="ocr-badge easyocr">EasyOCR</span>
+                        <span style="color: #8892b0; font-size: 0.8rem;">General OCR</span>
+                    </div>
+                    <div class="ocr-result-text" id="easyocrText">Waiting for image...</div>
+                    <button class="btn btn-secondary select-btn" id="selectEasyocr" onclick="selectOCR('easyocr')">
+                        Use This Result
+                    </button>
+                </div>
+
+                <div class="ocr-result-box trocr">
+                    <div class="ocr-result-header">
+                        <span class="ocr-badge trocr">TrOCR</span>
+                        <span style="color: #8892b0; font-size: 0.8rem;">Handwriting Optimized</span>
+                    </div>
+                    <div class="ocr-result-text" id="trocrText">Waiting for image...</div>
+                    <button class="btn btn-secondary select-btn" id="selectTrocr" onclick="selectOCR('trocr')">
+                        Use This Result
+                    </button>
+                </div>
+            </div>
+
+            <!-- Selected Text Display -->
+            <div class="selected-text-display" id="selectedTextDisplay" style="display: none;">
+                <label>✅ Selected for Grading (<span id="selectedSource">-</span>):</label>
+                <div class="text" id="selectedText">-</div>
+            </div>
+
+            <div class="error-message" id="uploadError"></div>
         </div>
-        
-        <div style="text-align: center;">
-            <button class="btn" id="uploadBtn" disabled>Convert to Text</button>
+
+        <!-- Reference Answer Section -->
+        <div class="card">
+            <h2 class="card-title"><span class="icon">✅</span> Reference Answer</h2>
+            <div class="textarea-container">
+                <label>Enter the correct/expected answer:</label>
+                <textarea id="referenceAnswer" placeholder="Type or paste the correct answer here..."></textarea>
+            </div>
         </div>
-        
-        <img id="imagePreview" class="preview" alt="Image preview">
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Processing your image...</p>
+
+        <!-- Grade Button -->
+        <div class="grade-btn-container">
+            <button class="btn grade-btn" id="gradeBtn" disabled>
+                🎯 Grade Answer
+            </button>
         </div>
-        
-        <div class="result success" id="successResult">
-            <h3>✅ Recognition Result:</h3>
-            <p><strong>File:</strong> <span id="fileName"></span></p>
-            <p><strong>Text:</strong> <span id="recognizedText"></span></p>
-        </div>
-        
-        <div class="result error" id="errorResult">
-            <h3>❌ Error:</h3>
-            <p id="errorMessage"></p>
+
+        <!-- Results Section -->
+        <div class="card results-card" id="resultsCard">
+            <h2 class="card-title"><span class="icon">📊</span> Grading Results</h2>
+
+            <div class="score-display">
+                <div class="score-circle" id="scoreCircle">
+                    <span class="score-number" id="scoreNumber">0</span>
+                    <span class="score-label">out of 10</span>
+                </div>
+                <div class="score-grade" id="scoreGrade">--</div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <label>Percentage Match</label>
+                    <span id="percentageMatch">--%</span>
+                </div>
+                <div class="detail-item">
+                    <label>Sequence Similarity</label>
+                    <span id="seqSimilarity">--%</span>
+                </div>
+                <div class="detail-item">
+                    <label>Semantic Similarity</label>
+                    <span id="semanticSimilarity">--%</span>
+                </div>
+                <div class="detail-item">
+                    <label>OCR Source Used</label>
+                    <span id="ocrSourceUsed">--</span>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p class="loading-text" id="loadingText">Processing with EasyOCR & TrOCR...</p>
+    </div>
+
     <script>
-        const uploadArea = document.getElementById('uploadArea');
+        const uploadZone = document.getElementById('uploadZone');
         const fileInput = document.getElementById('fileInput');
         const browseBtn = document.getElementById('browseBtn');
-        const uploadBtn = document.getElementById('uploadBtn');
         const imagePreview = document.getElementById('imagePreview');
-        const loading = document.getElementById('loading');
-        const successResult = document.getElementById('successResult');
-        const errorResult = document.getElementById('errorResult');
-        const fileName = document.getElementById('fileName');
-        const recognizedText = document.getElementById('recognizedText');
-        const errorMessage = document.getElementById('errorMessage');
+        const ocrResultsGrid = document.getElementById('ocrResultsGrid');
+        const easyocrText = document.getElementById('easyocrText');
+        const trocrText = document.getElementById('trocrText');
+        const selectedTextDisplay = document.getElementById('selectedTextDisplay');
+        const selectedText = document.getElementById('selectedText');
+        const selectedSource = document.getElementById('selectedSource');
+        const referenceAnswer = document.getElementById('referenceAnswer');
+        const gradeBtn = document.getElementById('gradeBtn');
+        const resultsCard = document.getElementById('resultsCard');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const uploadError = document.getElementById('uploadError');
 
-        // Event listeners
-        browseBtn.addEventListener('click', () => {
+        let ocrResults = {
+            easyocr: '',
+            trocr: ''
+        };
+        let selectedOCR = null;
+
+        // File upload handlers
+        browseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             fileInput.click();
         });
 
-        fileInput.addEventListener('change', handleFileSelect);
-        uploadBtn.addEventListener('click', uploadFile);
+        uploadZone.addEventListener('click', () => fileInput.click());
 
-        // Drag and drop events
-        uploadArea.addEventListener('dragover', (e) => {
+        uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadArea.classList.add('dragover');
+            uploadZone.classList.add('dragover');
         });
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
         });
 
-        uploadArea.addEventListener('drop', (e) => {
+        uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            
+            uploadZone.classList.remove('dragover');
             if (e.dataTransfer.files.length) {
                 fileInput.files = e.dataTransfer.files;
                 handleFileSelect();
             }
         });
 
+        fileInput.addEventListener('change', handleFileSelect);
+        referenceAnswer.addEventListener('input', checkGradeReady);
+
         function handleFileSelect() {
             const file = fileInput.files[0];
-            if (file) {
-                uploadBtn.disabled = false;
-                
-                // Show image preview
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    imagePreview.src = e.target.result;
-                    imagePreview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                uploadBtn.disabled = true;
-                imagePreview.style.display = 'none';
-            }
+            if (!file) return;
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            // Reset results
+            ocrResults = { easyocr: '', trocr: '' };
+            selectedOCR = null;
+            selectedTextDisplay.style.display = 'none';
+            document.getElementById('selectEasyocr').classList.remove('selected');
+            document.getElementById('selectTrocr').classList.remove('selected');
+
+            // Upload and extract text
+            uploadAndExtract(file);
         }
 
-        function uploadFile() {
-            const file = fileInput.files[0];
-            if (!file) return;
+        async function uploadAndExtract(file) {
+            loadingText.textContent = 'Processing with EasyOCR & TrOCR...';
+            loadingOverlay.classList.add('show');
+            uploadError.classList.remove('show');
+            ocrResultsGrid.style.display = 'none';
 
             const formData = new FormData();
             formData.append('file', file);
 
-            // Show loading, hide results
-            loading.style.display = 'block';
-            successResult.style.display = 'none';
-            errorResult.style.display = 'none';
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            // Disable buttons during upload
-            uploadBtn.disabled = true;
-            browseBtn.disabled = true;
-
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                loading.style.display = 'none';
-                browseBtn.disabled = false;
+                const data = await response.json();
 
                 if (data.success) {
-                    fileName.textContent = data.filename;
-                    recognizedText.textContent = data.predicted_text;
-                    successResult.style.display = 'block';
+                    ocrResults.easyocr = data.easyocr_text || '(No text detected)';
+                    ocrResults.trocr = data.trocr_text || '(No text detected)';
+
+                    easyocrText.textContent = ocrResults.easyocr;
+                    easyocrText.classList.remove('placeholder');
+
+                    trocrText.textContent = ocrResults.trocr;
+                    trocrText.classList.remove('placeholder');
+
+                    ocrResultsGrid.style.display = 'grid';
+
+                    // Auto-select TrOCR as it's usually better for handwriting
+                    selectOCR('trocr');
                 } else {
-                    errorMessage.textContent = data.error;
-                    errorResult.style.display = 'block';
+                    uploadError.textContent = data.error;
+                    uploadError.classList.add('show');
                 }
-            })
-            .catch(error => {
-                loading.style.display = 'none';
-                browseBtn.disabled = false;
-                errorMessage.textContent = 'Network error: ' + error.message;
-                errorResult.style.display = 'block';
-            });
+            } catch (error) {
+                uploadError.textContent = 'Network error: ' + error.message;
+                uploadError.classList.add('show');
+            } finally {
+                loadingOverlay.classList.remove('show');
+            }
+        }
+
+        function selectOCR(source) {
+            selectedOCR = source;
+            selectedText.textContent = ocrResults[source];
+            selectedSource.textContent = source === 'easyocr' ? 'EasyOCR' : 'TrOCR';
+            selectedTextDisplay.style.display = 'block';
+
+            // Update button styles
+            document.getElementById('selectEasyocr').classList.toggle('selected', source === 'easyocr');
+            document.getElementById('selectTrocr').classList.toggle('selected', source === 'trocr');
+
+            checkGradeReady();
+        }
+
+        function checkGradeReady() {
+            const hasSelectedText = selectedOCR && ocrResults[selectedOCR];
+            const hasReference = referenceAnswer.value.trim();
+            gradeBtn.disabled = !(hasSelectedText && hasReference);
+        }
+
+        gradeBtn.addEventListener('click', gradeAnswer);
+
+        async function gradeAnswer() {
+            if (!selectedOCR || !ocrResults[selectedOCR]) return;
+
+            const studentAnswer = ocrResults[selectedOCR];
+            const reference = referenceAnswer.value.trim();
+
+            if (!studentAnswer || !reference) return;
+
+            loadingText.textContent = 'Grading answer...';
+            loadingOverlay.classList.add('show');
+
+            try {
+                const response = await fetch('/grade', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        student_answer: studentAnswer,
+                        reference_answer: reference
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    alert('Grading error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Network error: ' + error.message);
+            } finally {
+                loadingOverlay.classList.remove('show');
+            }
+        }
+
+        function displayResults(data) {
+            const score = data.grade;
+            const percentage = data.percentage;
+
+            const scoreCircle = document.getElementById('scoreCircle');
+            scoreCircle.className = 'score-circle';
+
+            if (percentage >= 80) {
+                scoreCircle.classList.add('excellent');
+                document.getElementById('scoreGrade').textContent = 'Excellent! 🌟';
+            } else if (percentage >= 60) {
+                scoreCircle.classList.add('good');
+                document.getElementById('scoreGrade').textContent = 'Good Job! 👍';
+            } else if (percentage >= 40) {
+                scoreCircle.classList.add('average');
+                document.getElementById('scoreGrade').textContent = 'Needs Improvement 📚';
+            } else {
+                scoreCircle.classList.add('poor');
+                document.getElementById('scoreGrade').textContent = 'Review Required ⚠️';
+            }
+
+            document.getElementById('scoreNumber').textContent = score.toFixed(1);
+            document.getElementById('percentageMatch').textContent = percentage.toFixed(1) + '%';
+            document.getElementById('seqSimilarity').textContent = (data.sequence_match * 100).toFixed(1) + '%';
+            document.getElementById('semanticSimilarity').textContent = (data.tfidf_similarity * 100).toFixed(1) + '%';
+            document.getElementById('ocrSourceUsed').textContent = selectedOCR === 'easyocr' ? 'EasyOCR' : 'TrOCR';
+
+            resultsCard.classList.add('show');
+            resultsCard.scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 </body>
+
 </html>
