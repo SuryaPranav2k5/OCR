@@ -1,8 +1,28 @@
-easyocr>=1.6.0
-opencv-python>=4.0.0
-numpy>=1.18.0
-pandas>=1.0.0
-scikit-learn>=0.22.0
-tqdm>=4.40.0
+# Core dependencies
 flask>=2.0.0
 werkzeug>=2.0.0
+numpy>=1.18.0
+opencv-python>=4.0.0
+Pillow>=9.0.0
+
+# OCR Models
+easyocr>=1.6.0
+transformers>=4.30.0
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Machine Learning
+scikit-learn>=0.22.0
+pandas>=1.0.0
+tqdm>=4.40.0
+
+# Grading engine
+sentence-transformers>=2.2.0
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.21.0  # Speeds up fuzzywuzzy
+
+# Fine-tuning dependencies
+datasets>=2.14.0
+accelerate>=0.20.0
+evaluate>=0.4.0
+jiwer>=3.0.0  # For CER/WER metrics

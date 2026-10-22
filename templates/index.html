@@ -5,8 +5,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Handwriting Assignment Grader</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="description"
+        content="AI-powered handwriting recognition and automated grading system using EasyOCR, TrOCR, and multi-dimensional semantic analysis.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
+        :root {
+            --bg-primary: #0b0f1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --text-primary: #f1f5f9;
+            --text-secondary: #8892b0;
+            --text-muted: #4a5568;
+            --accent-cyan: #22d3ee;
+            --accent-emerald: #34d399;
+            --accent-amber: #fbbf24;
+            --accent-rose: #fb7185;
+            --accent-violet: #a78bfa;
+            --gradient-primary: linear-gradient(135deg, #22d3ee, #34d399);
+            --gradient-warm: linear-gradient(135deg, #fbbf24, #f97316);
+            --gradient-cool: linear-gradient(135deg, #818cf8, #a78bfa);
+            --gradient-danger: linear-gradient(135deg, #f87171, #ef4444);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --shadow-glow: 0 0 40px rgba(34, 211, 238, 0.08);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -16,9 +44,12 @@
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: #fff;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             padding: 20px;
+            background-image:
+                radial-gradient(ellipse 80% 60% at 50% -20%, rgba(34, 211, 238, 0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(52, 211, 153, 0.04) 0%, transparent 60%);
         }
 
         .container {
@@ -26,37 +57,67 @@
             margin: 0 auto;
         }
 
+        /* ---- Header ---- */
         .header {
             text-align: center;
-            padding: 40px 0;
+            padding: 48px 0 36px;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            font-size: 2.6rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             margin-bottom: 10px;
+            letter-spacing: -0.02em;
         }
 
         .header p {
-            color: #8892b0;
-            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-size: 1.05rem;
         }
 
+        .badge-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .tech-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(34, 211, 238, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(34, 211, 238, 0.15);
+        }
+
+        /* ---- Card ---- */
         .card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
             padding: 30px;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
+            box-shadow: var(--shadow-glow);
+            transition: border-color 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
         }
 
         .card-title {
-            font-size: 1.2rem;
-            font-weight: 600;
+            font-size: 1.15rem;
+            font-weight: 700;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
@@ -64,13 +125,14 @@
         }
 
         .card-title .icon {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
         }
 
+        /* ---- Upload zone ---- */
         .upload-zone {
-            border: 2px dashed rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 40px;
+            border: 2px dashed rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-lg);
+            padding: 44px 24px;
             text-align: center;
             transition: all 0.3s ease;
             cursor: pointer;
@@ -78,12 +140,12 @@
 
         .upload-zone:hover,
         .upload-zone.dragover {
-            border-color: #00d9ff;
-            background: rgba(0, 217, 255, 0.05);
+            border-color: var(--accent-cyan);
+            background: rgba(34, 211, 238, 0.04);
         }
 
         .upload-zone p {
-            color: #8892b0;
+            color: var(--text-secondary);
             margin-bottom: 15px;
         }
 
@@ -91,69 +153,77 @@
             display: none;
         }
 
+        /* ---- Buttons ---- */
         .btn {
-            background: linear-gradient(90deg, #00d9ff, #00ff88);
-            color: #1a1a2e;
+            background: var(--gradient-primary);
+            color: var(--bg-primary);
             border: none;
             padding: 12px 28px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1rem;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: 0.95rem;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            letter-spacing: 0.01em;
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(34, 211, 238, 0.25);
         }
 
         .btn:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.14);
             box-shadow: none;
         }
 
         .image-preview {
             max-width: 100%;
             max-height: 200px;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             margin-top: 15px;
             display: none;
         }
 
-        /* OCR Results Grid */
+        /* ---- OCR results ---- */
         .ocr-results-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 16px;
             margin-top: 20px;
         }
 
         .ocr-result-box {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: var(--radius-md);
             padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+            transition: border-color 0.25s, box-shadow 0.25s;
         }
 
         .ocr-result-box.easyocr {
-            border-left: 4px solid #f59e0b;
+            border-left: 4px solid var(--accent-amber);
         }
 
         .ocr-result-box.trocr {
-            border-left: 4px solid #00d9ff;
+            border-left: 4px solid var(--accent-cyan);
+        }
+
+        .ocr-result-box.selected-box {
+            border-color: var(--accent-emerald) !important;
+            box-shadow: 0 0 24px rgba(52, 211, 153, 0.12);
         }
 
         .ocr-result-header {
@@ -166,44 +236,46 @@
         .ocr-badge {
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            font-size: 0.72rem;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .ocr-badge.easyocr {
-            background: rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent-amber);
         }
 
         .ocr-badge.trocr {
-            background: rgba(0, 217, 255, 0.2);
-            color: #00d9ff;
+            background: rgba(34, 211, 238, 0.15);
+            color: var(--accent-cyan);
         }
 
         .ocr-result-text {
-            color: #e2e8f0;
-            line-height: 1.6;
+            color: var(--text-primary);
+            line-height: 1.7;
             min-height: 60px;
-            font-size: 0.95rem;
+            font-size: 0.93rem;
         }
 
         .ocr-result-text.placeholder {
-            color: #64748b;
+            color: var(--text-muted);
             font-style: italic;
         }
 
         .select-btn {
             margin-top: 12px;
-            padding: 8px 16px;
+            padding: 10px 16px;
             font-size: 0.85rem;
             width: 100%;
         }
 
         .select-btn.selected {
-            background: linear-gradient(90deg, #00ff88, #00d9ff);
+            background: var(--gradient-primary);
         }
 
+        /* ---- Text areas ---- */
         .textarea-container {
             margin-top: 20px;
         }
@@ -211,45 +283,48 @@
         .textarea-container label {
             display: block;
             margin-bottom: 8px;
-            color: #8892b0;
-            font-weight: 500;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.9rem;
         }
 
         .textarea-container textarea {
             width: 100%;
             min-height: 120px;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
             padding: 15px;
-            color: #fff;
+            color: var(--text-primary);
             font-family: 'Inter', sans-serif;
-            font-size: 1rem;
+            font-size: 0.95rem;
             resize: vertical;
+            transition: border-color 0.25s;
         }
 
         .textarea-container textarea:focus {
             outline: none;
-            border-color: #00d9ff;
+            border-color: var(--accent-cyan);
         }
 
         .selected-text-display {
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 8px;
+            background: rgba(52, 211, 153, 0.08);
+            border: 1px solid rgba(52, 211, 153, 0.25);
+            border-radius: var(--radius-sm);
             padding: 15px;
             margin-top: 15px;
         }
 
         .selected-text-display label {
-            color: #00ff88;
+            color: var(--accent-emerald);
             font-size: 0.85rem;
             display: block;
             margin-bottom: 8px;
+            font-weight: 600;
         }
 
         .selected-text-display .text {
-            color: #fff;
+            color: var(--text-primary);
         }
 
         .grade-btn-container {
@@ -258,11 +333,12 @@
         }
 
         .grade-btn {
-            font-size: 1.2rem;
-            padding: 16px 48px;
+            font-size: 1.15rem;
+            padding: 16px 56px;
+            border-radius: var(--radius-md);
         }
 
-        /* Results Section */
+        /* ---- Results Section ---- */
         .results-card {
             display: none;
         }
@@ -275,7 +351,7 @@
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(24px);
             }
 
             to {
@@ -284,81 +360,245 @@
             }
         }
 
+        /* Score circle */
         .score-display {
             text-align: center;
-            padding: 30px;
+            padding: 30px 0;
         }
 
         .score-circle {
-            width: 150px;
-            height: 150px;
+            width: 160px;
+            height: 160px;
             border-radius: 50%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
+            margin: 0 auto 16px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
         }
 
         .score-circle.excellent {
-            background: linear-gradient(135deg, #00ff88, #00d9ff);
+            background: var(--gradient-primary);
         }
 
         .score-circle.good {
-            background: linear-gradient(135deg, #00d9ff, #7c3aed);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
         }
 
         .score-circle.average {
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            background: var(--gradient-warm);
         }
 
         .score-circle.poor {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
+            background: var(--gradient-danger);
         }
 
         .score-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #1a1a2e;
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--bg-primary);
+            line-height: 1;
         }
 
         .score-label {
-            font-size: 0.9rem;
-            color: #1a1a2e;
-            font-weight: 500;
-        }
-
-        .score-grade {
-            font-size: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--bg-primary);
             font-weight: 600;
-            margin-top: 10px;
+            opacity: 0.8;
         }
 
+        .letter-grade {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-top: 10px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .feedback-text {
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-size: 0.95rem;
+        }
+
+        /* Dimension bars */
+        .dimensions-section {
+            margin-top: 28px;
+        }
+
+        .dimensions-section h3 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .dim-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dim-row:last-child {
+            border-bottom: none;
+        }
+
+        .dim-label {
+            width: 140px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .dim-bar-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .dim-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .dim-value {
+            width: 50px;
+            text-align: right;
+            font-size: 0.85rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .dim-weight {
+            width: 40px;
+            text-align: right;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        /* gradient colors for each dimension */
+        .dim-semantic .dim-bar-fill {
+            background: linear-gradient(90deg, #818cf8, #a78bfa);
+        }
+
+        .dim-keyword .dim-bar-fill {
+            background: linear-gradient(90deg, #34d399, #6ee7b7);
+        }
+
+        .dim-ngram .dim-bar-fill {
+            background: linear-gradient(90deg, #22d3ee, #67e8f9);
+        }
+
+        .dim-sequence .dim-bar-fill {
+            background: linear-gradient(90deg, #fbbf24, #fde68a);
+        }
+
+        .dim-tfidf .dim-bar-fill {
+            background: linear-gradient(90deg, #f472b6, #f9a8d4);
+        }
+
+        /* Keyword badges */
+        .keyword-section {
+            margin-top: 24px;
+        }
+
+        .keyword-section h3 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .kw-group {
+            margin-bottom: 14px;
+        }
+
+        .kw-group-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .kw-group-label.matched {
+            color: var(--accent-emerald);
+        }
+
+        .kw-group-label.missed {
+            color: var(--accent-rose);
+        }
+
+        .kw-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .kw-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .kw-badge.matched {
+            background: rgba(52, 211, 153, 0.12);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+        }
+
+        .kw-badge.missed {
+            background: rgba(251, 113, 133, 0.12);
+            color: var(--accent-rose);
+            border: 1px solid rgba(251, 113, 133, 0.2);
+        }
+
+        /* Quick stats row */
         .details-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 20px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 24px;
         }
 
         .detail-item {
             background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 1px solid var(--border);
         }
 
         .detail-item label {
-            color: #8892b0;
-            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
+            font-weight: 600;
         }
 
         .detail-item span {
-            font-size: 1.1rem;
-            font-weight: 500;
+            font-size: 1.2rem;
+            font-weight: 700;
         }
 
+        /* Loading */
         .loading-overlay {
             display: none;
             position: fixed;
@@ -366,8 +606,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -379,12 +619,12 @@
         }
 
         .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #00d9ff;
+            width: 54px;
+            height: 54px;
+            border: 3px solid rgba(255, 255, 255, 0.08);
+            border-top-color: var(--accent-cyan);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin {
@@ -394,16 +634,17 @@
         }
 
         .loading-text {
-            margin-top: 20px;
-            color: #8892b0;
+            margin-top: 18px;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .error-message {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             color: #fca5a5;
             padding: 15px;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             margin-top: 15px;
             display: none;
         }
@@ -424,6 +665,11 @@
             .header h1 {
                 font-size: 1.8rem;
             }
+
+            .dim-label {
+                width: 100px;
+                font-size: 0.78rem;
+            }
         }
     </style>
 </head>
@@ -432,11 +678,18 @@
     <div class="container">
         <header class="header">
             <h1>📝 Assignment Grader</h1>
-            <p>Dual OCR: EasyOCR + TrOCR (Microsoft Transformer)</p>
+            <p>Multi-dimensional AI grading with semantic understanding</p>
+            <div class="badge-row">
+                <span class="tech-badge">EasyOCR</span>
+                <span class="tech-badge">TrOCR</span>
+                <span class="tech-badge">Sentence-BERT</span>
+                <span class="tech-badge">Fuzzy Match</span>
+                <span class="tech-badge">ROUGE-L</span>
+            </div>
         </header>
 
         <!-- Upload Section -->
-        <div class="card">
+        <div class="card" id="upload-card">
             <h2 class="card-title"><span class="icon">📷</span> Student's Answer</h2>
             <div class="upload-zone" id="uploadZone">
                 <p>Drag & drop handwritten answer image or click to browse</p>
@@ -447,23 +700,23 @@
 
             <!-- OCR Results Side by Side -->
             <div class="ocr-results-grid" id="ocrResultsGrid" style="display: none;">
-                <div class="ocr-result-box easyocr">
+                <div class="ocr-result-box easyocr" id="easyocrBox">
                     <div class="ocr-result-header">
                         <span class="ocr-badge easyocr">EasyOCR</span>
-                        <span style="color: #8892b0; font-size: 0.8rem;">General OCR</span>
+                        <span style="color: var(--text-muted); font-size: 0.78rem;">General OCR</span>
                     </div>
-                    <div class="ocr-result-text" id="easyocrText">Waiting for image...</div>
+                    <div class="ocr-result-text placeholder" id="easyocrText">Waiting for image...</div>
                     <button class="btn btn-secondary select-btn" id="selectEasyocr" onclick="selectOCR('easyocr')">
                         Use This Result
                     </button>
                 </div>
 
-                <div class="ocr-result-box trocr">
+                <div class="ocr-result-box trocr" id="trocrBox">
                     <div class="ocr-result-header">
                         <span class="ocr-badge trocr">TrOCR</span>
-                        <span style="color: #8892b0; font-size: 0.8rem;">Handwriting Optimized</span>
+                        <span style="color: var(--text-muted); font-size: 0.78rem;">Handwriting Optimized</span>
                     </div>
-                    <div class="ocr-result-text" id="trocrText">Waiting for image...</div>
+                    <div class="ocr-result-text placeholder" id="trocrText">Waiting for image...</div>
                     <button class="btn btn-secondary select-btn" id="selectTrocr" onclick="selectOCR('trocr')">
                         Use This Result
                     </button>
@@ -480,7 +733,7 @@
         </div>
 
         <!-- Reference Answer Section -->
-        <div class="card">
+        <div class="card" id="reference-card">
             <h2 class="card-title"><span class="icon">✅</span> Reference Answer</h2>
             <div class="textarea-container">
                 <label>Enter the correct/expected answer:</label>
@@ -504,25 +757,82 @@
                     <span class="score-number" id="scoreNumber">0</span>
                     <span class="score-label">out of 10</span>
                 </div>
-                <div class="score-grade" id="scoreGrade">--</div>
+                <div class="letter-grade" id="letterGrade">--</div>
+                <div class="feedback-text" id="feedbackText"></div>
             </div>
 
+            <!-- Quick stats -->
             <div class="details-grid">
                 <div class="detail-item">
-                    <label>Percentage Match</label>
+                    <label>Percentage</label>
                     <span id="percentageMatch">--%</span>
                 </div>
                 <div class="detail-item">
-                    <label>Sequence Similarity</label>
-                    <span id="seqSimilarity">--%</span>
+                    <label>Keyword Coverage</label>
+                    <span id="kwCoverage">--%</span>
                 </div>
                 <div class="detail-item">
-                    <label>Semantic Similarity</label>
-                    <span id="semanticSimilarity">--%</span>
-                </div>
-                <div class="detail-item">
-                    <label>OCR Source Used</label>
+                    <label>OCR Source</label>
                     <span id="ocrSourceUsed">--</span>
+                </div>
+            </div>
+
+            <!-- Dimension bars -->
+            <div class="dimensions-section">
+                <h3>Score Breakdown</h3>
+
+                <div class="dim-row dim-semantic" id="dimSemantic">
+                    <span class="dim-label">Semantic</span>
+                    <div class="dim-bar-track">
+                        <div class="dim-bar-fill" id="barSemantic" style="width:0%"></div>
+                    </div>
+                    <span class="dim-value" id="valSemantic">--</span>
+                    <span class="dim-weight" id="wSemantic">--</span>
+                </div>
+                <div class="dim-row dim-keyword" id="dimKeyword">
+                    <span class="dim-label">Keyword</span>
+                    <div class="dim-bar-track">
+                        <div class="dim-bar-fill" id="barKeyword" style="width:0%"></div>
+                    </div>
+                    <span class="dim-value" id="valKeyword">--</span>
+                    <span class="dim-weight" id="wKeyword">--</span>
+                </div>
+                <div class="dim-row dim-ngram" id="dimNgram">
+                    <span class="dim-label">N-gram Overlap</span>
+                    <div class="dim-bar-track">
+                        <div class="dim-bar-fill" id="barNgram" style="width:0%"></div>
+                    </div>
+                    <span class="dim-value" id="valNgram">--</span>
+                    <span class="dim-weight" id="wNgram">--</span>
+                </div>
+                <div class="dim-row dim-sequence" id="dimSequence">
+                    <span class="dim-label">Sequence</span>
+                    <div class="dim-bar-track">
+                        <div class="dim-bar-fill" id="barSequence" style="width:0%"></div>
+                    </div>
+                    <span class="dim-value" id="valSequence">--</span>
+                    <span class="dim-weight" id="wSequence">--</span>
+                </div>
+                <div class="dim-row dim-tfidf" id="dimTfidf">
+                    <span class="dim-label">TF-IDF</span>
+                    <div class="dim-bar-track">
+                        <div class="dim-bar-fill" id="barTfidf" style="width:0%"></div>
+                    </div>
+                    <span class="dim-value" id="valTfidf">--</span>
+                    <span class="dim-weight" id="wTfidf">--</span>
+                </div>
+            </div>
+
+            <!-- Keywords -->
+            <div class="keyword-section" id="keywordSection" style="display:none;">
+                <h3>Keyword Analysis</h3>
+                <div class="kw-group" id="kwMatchedGroup">
+                    <div class="kw-group-label matched">✅ Matched Keywords</div>
+                    <div class="kw-badges" id="kwMatchedBadges"></div>
+                </div>
+                <div class="kw-group" id="kwMissedGroup">
+                    <div class="kw-group-label missed">❌ Missed Keywords</div>
+                    <div class="kw-badges" id="kwMissedBadges"></div>
                 </div>
             </div>
         </div>
@@ -552,61 +862,36 @@
         const loadingText = document.getElementById('loadingText');
         const uploadError = document.getElementById('uploadError');
 
-        let ocrResults = {
-            easyocr: '',
-            trocr: ''
-        };
+        let ocrResults = { easyocr: '', trocr: '' };
         let selectedOCR = null;
 
         // File upload handlers
-        browseBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            fileInput.click();
-        });
-
+        browseBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
         uploadZone.addEventListener('click', () => fileInput.click());
-
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('dragover');
-        });
-
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('dragover');
-        });
-
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
         uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                handleFileSelect();
-            }
+            if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; handleFileSelect(); }
         });
-
         fileInput.addEventListener('change', handleFileSelect);
         referenceAnswer.addEventListener('input', checkGradeReady);
 
         function handleFileSelect() {
             const file = fileInput.files[0];
             if (!file) return;
-
-            // Show preview
             const reader = new FileReader();
-            reader.onload = (e) => {
-                imagePreview.src = e.target.result;
-                imagePreview.style.display = 'block';
-            };
+            reader.onload = (e) => { imagePreview.src = e.target.result; imagePreview.style.display = 'block'; };
             reader.readAsDataURL(file);
 
-            // Reset results
             ocrResults = { easyocr: '', trocr: '' };
             selectedOCR = null;
             selectedTextDisplay.style.display = 'none';
+            document.getElementById('easyocrBox').classList.remove('selected-box');
+            document.getElementById('trocrBox').classList.remove('selected-box');
             document.getElementById('selectEasyocr').classList.remove('selected');
             document.getElementById('selectTrocr').classList.remove('selected');
-
-            // Upload and extract text
             uploadAndExtract(file);
         }
 
@@ -620,26 +905,16 @@
             formData.append('file', file);
 
             try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
+                const response = await fetch('/upload', { method: 'POST', body: formData });
                 const data = await response.json();
-
                 if (data.success) {
                     ocrResults.easyocr = data.easyocr_text || '(No text detected)';
                     ocrResults.trocr = data.trocr_text || '(No text detected)';
-
                     easyocrText.textContent = ocrResults.easyocr;
                     easyocrText.classList.remove('placeholder');
-
                     trocrText.textContent = ocrResults.trocr;
                     trocrText.classList.remove('placeholder');
-
                     ocrResultsGrid.style.display = 'grid';
-
-                    // Auto-select TrOCR as it's usually better for handwriting
                     selectOCR('trocr');
                 } else {
                     uploadError.textContent = data.error;
@@ -659,10 +934,10 @@
             selectedSource.textContent = source === 'easyocr' ? 'EasyOCR' : 'TrOCR';
             selectedTextDisplay.style.display = 'block';
 
-            // Update button styles
             document.getElementById('selectEasyocr').classList.toggle('selected', source === 'easyocr');
             document.getElementById('selectTrocr').classList.toggle('selected', source === 'trocr');
-
+            document.getElementById('easyocrBox').classList.toggle('selected-box', source === 'easyocr');
+            document.getElementById('trocrBox').classList.toggle('selected-box', source === 'trocr');
             checkGradeReady();
         }
 
@@ -676,10 +951,8 @@
 
         async function gradeAnswer() {
             if (!selectedOCR || !ocrResults[selectedOCR]) return;
-
             const studentAnswer = ocrResults[selectedOCR];
             const reference = referenceAnswer.value.trim();
-
             if (!studentAnswer || !reference) return;
 
             loadingText.textContent = 'Grading answer...';
@@ -688,17 +961,10 @@
             try {
                 const response = await fetch('/grade', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        student_answer: studentAnswer,
-                        reference_answer: reference
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_answer: studentAnswer, reference_answer: reference })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     displayResults(data);
                 } else {
@@ -715,28 +981,71 @@
             const score = data.grade;
             const percentage = data.percentage;
 
+            // Score circle colour
             const scoreCircle = document.getElementById('scoreCircle');
             scoreCircle.className = 'score-circle';
-
-            if (percentage >= 80) {
-                scoreCircle.classList.add('excellent');
-                document.getElementById('scoreGrade').textContent = 'Excellent! 🌟';
-            } else if (percentage >= 60) {
-                scoreCircle.classList.add('good');
-                document.getElementById('scoreGrade').textContent = 'Good Job! 👍';
-            } else if (percentage >= 40) {
-                scoreCircle.classList.add('average');
-                document.getElementById('scoreGrade').textContent = 'Needs Improvement 📚';
-            } else {
-                scoreCircle.classList.add('poor');
-                document.getElementById('scoreGrade').textContent = 'Review Required ⚠️';
-            }
+            if (percentage >= 80) scoreCircle.classList.add('excellent');
+            else if (percentage >= 60) scoreCircle.classList.add('good');
+            else if (percentage >= 40) scoreCircle.classList.add('average');
+            else scoreCircle.classList.add('poor');
 
             document.getElementById('scoreNumber').textContent = score.toFixed(1);
+            document.getElementById('letterGrade').textContent = data.letter_grade || '--';
+            document.getElementById('feedbackText').textContent = data.feedback || '';
             document.getElementById('percentageMatch').textContent = percentage.toFixed(1) + '%';
-            document.getElementById('seqSimilarity').textContent = (data.sequence_match * 100).toFixed(1) + '%';
-            document.getElementById('semanticSimilarity').textContent = (data.tfidf_similarity * 100).toFixed(1) + '%';
             document.getElementById('ocrSourceUsed').textContent = selectedOCR === 'easyocr' ? 'EasyOCR' : 'TrOCR';
+
+            // Dimensions
+            const dims = data.dimensions || {};
+            const weights = data.weights_used || {};
+
+            function setBar(id, value, weightLabel) {
+                const val = value !== null && value !== undefined ? value : 0;
+                document.getElementById('bar' + id).style.width = val + '%';
+                document.getElementById('val' + id).textContent = val !== null ? val.toFixed(1) + '%' : 'N/A';
+                document.getElementById('w' + id).textContent = weightLabel ? weightLabel + '%' : '';
+            }
+
+            setBar('Semantic', dims.semantic_similarity, weights.semantic);
+            setBar('Keyword', dims.keyword_coverage, weights.keyword);
+            setBar('Ngram', dims.ngram_overlap, weights.ngram);
+            setBar('Sequence', dims.sequence_match, weights.sequence);
+            setBar('Tfidf', dims.tfidf_similarity, weights.tfidf);
+
+            // Hide semantic row if not available
+            document.getElementById('dimSemantic').style.display =
+                dims.semantic_similarity !== null ? 'flex' : 'none';
+
+            // Keywords
+            const kw = data.keywords || {};
+            document.getElementById('kwCoverage').textContent =
+                (dims.keyword_coverage !== undefined ? dims.keyword_coverage.toFixed(1) : '--') + '%';
+
+            const kwSection = document.getElementById('keywordSection');
+            const matchedBadges = document.getElementById('kwMatchedBadges');
+            const missedBadges = document.getElementById('kwMissedBadges');
+            matchedBadges.innerHTML = '';
+            missedBadges.innerHTML = '';
+
+            if (kw.total > 0) {
+                kwSection.style.display = 'block';
+                (kw.matched || []).forEach(k => {
+                    const span = document.createElement('span');
+                    span.className = 'kw-badge matched';
+                    span.textContent = k;
+                    matchedBadges.appendChild(span);
+                });
+                (kw.missed || []).forEach(k => {
+                    const span = document.createElement('span');
+                    span.className = 'kw-badge missed';
+                    span.textContent = k;
+                    missedBadges.appendChild(span);
+                });
+                document.getElementById('kwMatchedGroup').style.display = (kw.matched || []).length ? 'block' : 'none';
+                document.getElementById('kwMissedGroup').style.display = (kw.missed || []).length ? 'block' : 'none';
+            } else {
+                kwSection.style.display = 'none';
+            }
 
             resultsCard.classList.add('show');
             resultsCard.scrollIntoView({ behavior: 'smooth' });

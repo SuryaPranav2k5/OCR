@@ -1,0 +1,60 @@
+# Byte-compiled / optimized / Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+.env
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Machine Learning Checkpoints, Large Model Weights & Embeddings
+Models/
+models/
+trocr-finetuned-model/
+checkpoint-*/
+*.safetensors
+*.pt
+*.pth
+*.bin
+*.onnx
+runs/
+wandb/
+
+# Datasets and Media
+Datasets/
+data/raw_images/
+data/processed/
+data/test/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Web Application Uploads, Debug Dumps & Runtime Artifacts
+debug_lines/
+uploads/
+output/
+*.log
+*.tmp
+WhatsApp-Image-*.jpeg
+
+# IDEs, Editors & OS Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Project-Specific Notes & Prep
+README_INTERVIEW_PREP.md
+CV_CLAIMS_VERIFICATION.md
+
